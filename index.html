@@ -1,20 +1,72 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <meta
-      http-equiv="X-Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <title>Hello from Electron renderer!</title>
-  </head>
-  <body>
-    <h1>Hello from Electron renderer!</h1>
-    <p>👋</p>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manufacturing Scheduler</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px;
+      background-color: #eef1f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      font-size: 36px;
+      color: #333;
+    }
+
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 500px;
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 15px;
+      text-align: center;
+      background-color: #007BFF;
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    .secondary-btn {
+      background-color: #20c997;
+    }
+
+    .secondary-btn:hover {
+      background-color: #159c7d;
+    }
+  </style>
+</head>
+<body>
+  <h1>Manufacturing Scheduler</h1>
+  <div class="dashboard">
+    <a href="assign.html" class="btn">Assign Work</a>
+    <button class="btn secondary-btn" onclick="window.location.href = 'list-inner-bearing.html'">View Inner Bearing Work</button>
+    <button class="btn secondary-btn" onclick="window.location.href = 'list-cvt-tank.html'">View CVT Tank Work</button>
+  </div>
+</body>
 </html>

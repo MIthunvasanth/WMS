@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Assign Work</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f2f5f7;
+      margin: 0;
+      padding: 60px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #333;
+    }
+
+    .back-link {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      text-decoration: none;
+      color: #007BFF;
+      font-weight: bold;
+      font-size: 16px;
+      background: #ffffff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: background 0.3s;
+    }
+
+    .back-link:hover {
+      background: #eaf3ff;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 30px;
+      font-size: 32px;
+    }
+
+    form {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 380px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 20px;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 16px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      transition: border-color 0.3s;
+    }
+
+    input[type="number"]:focus {
+      border-color: #4CAF50;
+      outline: none;
+    }
+
+    button[type="submit"] {
+      margin-top: 15px;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #1270d6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      width: 100%;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #3f63b6;
+    }
+
+    .listbutton {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 70%;
+    }
+
+    .listbutton button {
+      padding: 12px;
+      font-size: 16px;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+    button[type="submit"]:hover {
+      background-color: #5679c4;
+    }
+
+    .buttons {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .buttons button {
+      padding: 12px;
+      font-size: 16px;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+
+    .btn-view {
+      background-color: #3498db;
+    }
+
+    .btn-reset {
+      background-color: #e74c3c;
+    }
+
+    .buttons button:hover {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding-top: 80px;
+      }
+
+      .back-link {
+        font-size: 14px;
+        padding: 6px 12px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="index.html">← Back</a>
+
+  <h1>Assign Work</h1>
+
+  <form id="assignmentForm">
+    <label>
+      Inner Bearing Quantity:
+      <input type="number" name="innerBearing" min="0" placeholder="Enter quantity"  />
+    </label>
+
+    <label>
+      CVT Tank Quantity:
+      <input type="number" name="cvtTank" min="0" placeholder="Enter quantity"  />
+    </label>
+
+    <button type="submit">Schedule</button>
+  </form>
+  <div class="listbutton">
+    <div style="width: 100%;display: flex; gap: 20px;justify-content: center;">
+    <button class="btn-view" style="width: 40%;background-color: #28a745;" onclick="window.location.href = 'list-inner-bearing.html'">View Inner Bearing Work</button>
+    <button class="btn-view" style="width: 40%;background-color: #284ea7;" onclick="window.location.href = 'list-cvt-tank.html'">View CVT Tank Work</button>
+    </div>
+</div   >
+  <div class="buttons">
+  
+    <button class="btn-reset" id="resetBtn">Reset Scheduler</button>
+  </div>
+
+
+  <script src="scheduler.js"></script>
+
+  <script>
+    document.getElementById('assignmentForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      const jobs = [];
+  
+      const innerBearingQty = parseInt(form.get('innerBearing')) || 0;
+      const cvtTankQty = parseInt(form.get('cvtTank')) || 0;
+  
+      if (innerBearingQty > 0) {
+        jobs.push({ product: 'Inner Bearing', quantity: innerBearingQty });
+      }
+  
+      if (cvtTankQty > 0) {
+        jobs.push({ product: 'CVT Tank', quantity: cvtTankQty });
+      }
+  
+      if (jobs.length > 0) {
+        for (const job of jobs) {
+          addJob(job.product, job.quantity); 
+        }
+  
+        alert('Schedule assigned!');
+        e.target.reset();
+      } else {
+        alert('Please enter at least one quantity.');
+      }
+    });
+  
+    document.getElementById('resetBtn').addEventListener('click', function () {
+      const confirmReset = confirm('Are you sure you want to reset the entire schedule?');
+      if (confirmReset) {
+        resetScheduler(); 
+        alert('Scheduler reset successfully!');
+        window.location.reload();
+      }
+    });
+  </script>
+</body>
+</html>
