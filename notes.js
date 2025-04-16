@@ -1,14 +1,29 @@
+// Utility to auto-expand machine group names like 'VMC' to ['VMC 1', 'VMC 2']
+const machineGroups = {
+  VMC: ['VMC 1', 'VMC 2'],
+  Welding: ['Welding 1', 'Welding 2', 'Welding 3', 'Welding 4', 'Welding 5'],
+  Manual: [
+    'Manual 1',
+    'Manual 2',
+    'Manual 3',
+    'Manual 4',
+    'Manual 5',
+    'Manual 6',
+  ],
+};
+
 class Machine {
   constructor(name) {
     this.name = name;
-    this.availableAt = 540; // Start at 9:00 AM (540 minutes since midnight)
+    this.availableAt = 540; // Start at 9:00 AM (540 minutes)
+    this.runTime = 0; // Track how long the machine is used
   }
 
-  // Method to schedule a task on the machine
   scheduleTask(processTime, currentTime) {
-    const startTime = Math.max(currentTime, this.availableAt); // Start when the machine is free or the current time
+    const startTime = Math.max(currentTime, this.availableAt);
     const endTime = startTime + processTime;
-    this.availableAt = endTime; // Update when the machine will be free next
+    this.availableAt = endTime;
+    this.runTime += processTime;
     return { machine: this.name, startTime, endTime };
   }
 }
@@ -16,165 +31,149 @@ class Machine {
 class Product {
   constructor(partNo, processes) {
     this.partNo = partNo;
-    this.processes = processes; // Array of processes
+    this.processes = processes;
   }
 
-  // Method to schedule all processes for the product
   scheduleProcesses(machines, quantity, currentTime = 540) {
     const schedule = [];
     let totalTime = 0;
 
-    // For each process, repeat it based on the quantity of products
     for (const process of this.processes) {
       const { name, processTime, machineNeeded } = process;
 
-      // If the process needs a specific machine (like welding), find the available machine from the pool
-      let machine;
-      if (Array.isArray(machineNeeded)) {
-        // If there are multiple machines available (like welding), find the first available one
-        machine = this.findAvailableMachine(
-          machines,
-          machineNeeded,
-          currentTime
-        );
-      } else {
-        // Otherwise, just find the specific machine
-        machine = machines.find((m) => m.name === machineNeeded);
-      }
+      let machineOptions = Array.isArray(machineNeeded)
+        ? machineNeeded
+        : machineGroups[machineNeeded] || [machineNeeded];
 
-      // Repeat the process for the required quantity, sequentially
       for (let i = 0; i < quantity; i++) {
+        const machine = this.findAvailableMachine(machines, machineOptions);
         if (machine) {
           const task = machine.scheduleTask(processTime, currentTime);
           schedule.push({ partNo: this.partNo, process: name, ...task });
-          currentTime = task.endTime; // Update current time after each process
-          totalTime = task.endTime; // Keep track of total time
+          currentTime = task.endTime;
+          totalTime = Math.max(totalTime, task.endTime);
         }
       }
     }
     return { schedule, totalTime };
   }
 
-  // Find the first available machine from the pool of machines assigned to the process
-  findAvailableMachine(machines, machineNames, currentTime) {
-    // Find the machines that match the provided names (array of possible machines)
+  findAvailableMachine(machines, machineNames) {
     const availableMachines = machines.filter((m) =>
       machineNames.includes(m.name)
     );
-
-    // Sort by the earliest available machine and return the first one
     availableMachines.sort((a, b) => a.availableAt - b.availableAt);
-    return availableMachines.length > 0 ? availableMachines[0] : null;
+    return availableMachines[0] || null;
   }
 }
 
-// Define the new machine list
 const machines = [
-  new Machine('VTL'),
-  new Machine('VMC 1'),
-  new Machine('VMC 2'),
-  new Machine('Universal Milling'),
-  new Machine('Horizontal Milling'),
-  new Machine('Lathe'),
-  new Machine('Drilling'),
-  new Machine('CNC Tapping'),
-  new Machine('Dot Marking'),
-  new Machine('Press Brake'),
-  new Machine('Welding 1'),
-  new Machine('Welding 2'),
-  new Machine('Welding 3'),
-  new Machine('Welding 4'),
-  new Machine('Welding 5'),
-  new Machine('Manual 1'),
-  new Machine('Manual 2'),
-  new Machine('Manual 3'),
-  new Machine('Manual 4'),
-  new Machine('Manual 5'),
-  new Machine('Manual 6'),
-];
+  'VTL',
+  'VMC 1',
+  'VMC 2',
+  'Universal Milling',
+  'Horizontal Milling',
+  'Lathe',
+  'Drilling',
+  'CNC Tapping',
+  'Dot Marking',
+  'Press Brake',
+  'Welding 1',
+  'Welding 2',
+  'Welding 3',
+  'Welding 4',
+  'Welding 5',
+  'Manual 1',
+  'Manual 2',
+  'Manual 3',
+  'Manual 4',
+  'Manual 5',
+  'Manual 6',
+].map((name) => new Machine(name));
 
-// Example product definition
-const innerBearing = new Product('Inner Bearing', [
-  { name: 'Cutting', processTime: 30, machineNeeded: 'VTL' },
-  { name: 'Slot Mill', processTime: 50, machineNeeded: 'VMC 1' },
-  { name: 'Debour', processTime: 20, machineNeeded: 'Manual 1' },
-  { name: 'Tapping', processTime: 12, machineNeeded: 'CNC Tapping' },
-  { name: 'Marking', processTime: 3, machineNeeded: 'Dot Marking' },
-  {
-    name: 'Welding',
-    processTime: 40,
-    machineNeeded: ['Welding 1', 'Welding 2', 'Welding 3', 'Welding 4'],
-  },
-]);
-
-const cvtTank = new Product('CVT Tank', [
-  { name: 'Marking', processTime: 2, machineNeeded: 'Dot Marking' },
-  { name: 'Bending', processTime: 24, machineNeeded: 'Press Brake' },
-  { name: 'Setting', processTime: 20, machineNeeded: 'Welding 3' },
-  {
-    name: 'Full Weld',
-    processTime: 40,
-    machineNeeded: ['Welding 1', 'Welding 2', 'Welding 3', 'Welding 4'],
-  },
-]);
-
-// Input: Product and quantity (dynamically received as an object)
-const productInput = { 'Inner Bearing': 5, cvtTank: 4 };
-
-// Function to schedule products based on input
-function scheduleProducts(productInput) {
-  let fullSchedule = [];
-  let totalTime = 0;
-  let currentTime = 540; // Start time at 9:00 AM
-
-  // Iterate through each product to schedule it
-  for (const [productName, quantity] of Object.entries(productInput)) {
-    let selectedProduct;
-
-    if (productName === 'Inner Bearing') {
-      selectedProduct = innerBearing;
-    } else if (productName === 'cvtTank') {
-      selectedProduct = cvtTank;
-    }
-
-    if (selectedProduct) {
-      const { schedule, totalTime: productTotalTime } =
-        selectedProduct.scheduleProcesses(machines, quantity, currentTime);
-      fullSchedule = [...fullSchedule, ...schedule];
-      totalTime = Math.max(totalTime, productTotalTime); // Track the overall time
-    }
-  }
-
-  // Sort all tasks by their start time to create the final schedule
-  fullSchedule.sort((a, b) => a.startTime - b.startTime);
-
-  return { fullSchedule, totalTime };
-}
-
-// Convert total time to actual hours and minutes from 9:00 AM
-const convertToTime = (timeInMinutes) => {
-  const hours = Math.floor(timeInMinutes / 60);
-  const minutes = timeInMinutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes
-    .toString()
-    .padStart(2, '0')}`;
+const productCatalog = {
+  'Inner Bearing': new Product('Inner Bearing', [
+    { name: 'Cutting', processTime: 30, machineNeeded: 'VTL' },
+    { name: 'Slot Mill', processTime: 50, machineNeeded: 'VMC' },
+    { name: 'Debour', processTime: 20, machineNeeded: 'Manual' },
+    { name: 'Tapping', processTime: 12, machineNeeded: 'CNC Tapping' },
+    { name: 'Marking', processTime: 3, machineNeeded: 'Dot Marking' },
+    { name: 'Welding', processTime: 40, machineNeeded: 'Welding' },
+  ]),
+  'CVT Tank': new Product('CVT Tank', [
+    { name: 'Marking', processTime: 2, machineNeeded: 'Dot Marking' },
+    { name: 'Bending', processTime: 24, machineNeeded: 'Press Brake' },
+    { name: 'Setting', processTime: 20, machineNeeded: 'Welding' },
+    { name: 'Full Weld', processTime: 40, machineNeeded: 'Welding' },
+  ]),
 };
 
-// Get the full schedule based on input
-const { fullSchedule, totalTime } = scheduleProducts(productInput);
+function scheduleProducts(productInput, dueTime = 1020) {
+  // Default due time 5 PM
+  let fullSchedule = [];
+  let maxEndTime = 0;
 
-// Display the full schedule with total times in actual time
-console.log('Full Schedule:');
-fullSchedule.forEach((task) => {
+  for (const [productName, { quantity, dueTime: productDue }] of Object.entries(
+    productInput
+  )) {
+    const product = productCatalog[productName];
+    if (!product) continue;
+
+    const { schedule, totalTime } = product.scheduleProcesses(
+      machines,
+      quantity
+    );
+    fullSchedule.push(...schedule);
+    maxEndTime = Math.max(maxEndTime, totalTime);
+
+    if (totalTime > (productDue || dueTime)) {
+      console.log(`${productName} CANNOT be completed before due time.`);
+    } else {
+      console.log(`${productName} can be completed on time.`);
+    }
+  }
+
+  fullSchedule.sort((a, b) => a.startTime - b.startTime);
+
+  return {
+    fullSchedule,
+    machineUsage: machines.map((m) => ({
+      machine: m.name,
+      runTime: m.runTime,
+    })),
+    totalEndTime: maxEndTime,
+  };
+}
+
+const convertToTime = (time) => {
+  const h = Math.floor(time / 60);
+  const m = time % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+};
+
+// Example input
+const input = {
+  'Inner Bearing': { quantity: 5, dueTime: 1020 }, // 5 PM
+  'CVT Tank': { quantity: 4, dueTime: 1020 },
+};
+
+const result = scheduleProducts(input);
+
+console.log('\nFull Schedule:');
+result.fullSchedule.forEach((task) => {
   console.log(
-    `Product: ${task.partNo}, Process: ${task.process}, Machine: ${
-      task.machine
-    }, Start Time: ${convertToTime(
-      task.startTime
-    )} AM, End Time: ${convertToTime(task.endTime)} AM`
+    `Product: ${task.partNo}, Process: ${task.process}, Machine: ${task.machine}, ` +
+      `Start: ${convertToTime(task.startTime)}, End: ${convertToTime(
+        task.endTime
+      )}`
   );
 });
 
-// Output total time to complete the product batch (in hours and minutes)
-console.log('\nTotal Time for All Products:');
-console.log(`Total Time: ${convertToTime(totalTime)} AM`);
+console.log('\nMachine Usage:');
+result.machineUsage.forEach((m) => {
+  if (m.runTime > 0) {
+    console.log(`${m.machine}: ${m.runTime} mins`);
+  }
+});
+
+console.log(`\nTotal Time to Finish: ${convertToTime(result.totalEndTime)}`);
