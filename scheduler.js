@@ -1,118 +1,113 @@
+// Machine class to handle scheduling
 class Machine {
   constructor(name) {
     this.name = name;
-    this.availableAt = getCurrentTimeInMinutes(); // Initialize based on real time
+    this.availableAt = new Date();
+    this.processHistory = []; // Track process history for each machine
   }
 
-  scheduleTask(processTime, currentTime) {
-    const startTime = Math.max(currentTime, this.availableAt);
-    const endTime = startTime + processTime;
-    this.availableAt = endTime;
-    return { machine: this.name, startTime, endTime };
+  // Schedule the machine with the given process time
+  schedule(processTime, current) {
+    const start = new Date(Math.max(this.availableAt, current));
+    const end = new Date(start.getTime() + processTime * 60000); // process time in minutes
+    this.availableAt = end; // Update machine availability
+    this.processHistory.push({
+      processStart: start,
+      processEnd: end,
+      processTime: processTime,
+    });
+
+    return { machine: this.name, start, end };
+  }
+
+  // Get when the machine will be free
+  getNextAvailableTime() {
+    return this.availableAt;
   }
 }
 
+// Product class with process flows
 class Product {
-  constructor(partNo, processes) {
-    this.partNo = partNo;
-    this.processes = processes;
+  constructor(name, processFlow) {
+    this.name = name;
+    this.processFlow = processFlow;
   }
 
-  scheduleProcesses(machines, quantity, startTime) {
-    const schedule = [];
-    let totalTime = startTime;
+  schedule(machines, quantity, startTime, dailyMinutes) {
+    let results = [];
+    let currentTime = new Date(startTime);
 
     for (let i = 0; i < quantity; i++) {
-      let unitTime = startTime;
+      let unitTime = new Date(currentTime);
 
-      for (const process of this.processes) {
+      // Process each step for the product
+      for (const process of this.processFlow) {
         const { name, processTime, machineNeeded } = process;
+        const machinesNeeded = Array.isArray(machineNeeded)
+          ? machineNeeded
+          : [machineNeeded];
 
-        let machine;
-        if (Array.isArray(machineNeeded)) {
-          machine = this.findAvailableMachine(
-            machines,
-            machineNeeded,
-            unitTime
-          );
-        } else {
-          machine = machines.find((m) => m.name === machineNeeded);
-        }
+        for (const machineName of machinesNeeded) {
+          const machine = machines.find((m) => m.name === machineName);
 
-        if (machine) {
-          const task = machine.scheduleTask(processTime, unitTime);
-          schedule.push({ partNo: this.partNo, process: name, ...task });
-          unitTime = task.endTime;
-          totalTime = Math.max(totalTime, unitTime);
+          if (!machine) continue;
+
+          // Skip non-working times and Sundays
+          while (
+            isSunday(unitTime) ||
+            !withinWorkingHours(unitTime, dailyMinutes, startTime)
+          ) {
+            unitTime = nextWorkingSlot(unitTime, dailyMinutes, startTime);
+          }
+
+          const { start, end } = machine.schedule(processTime, unitTime);
+          results.push({
+            partNo: this.name,
+            process: name,
+            machine: machine.name,
+            start: convertToTimeFormat(start),
+            end: convertToTimeFormat(end),
+          });
+
+          unitTime = new Date(end); // Move to next process time
         }
       }
     }
 
-    return { schedule, totalTime };
-  }
-
-  findAvailableMachine(machines, machineNames, currentTime) {
-    const availableMachines = machines.filter((m) =>
-      machineNames.includes(m.name)
-    );
-    availableMachines.sort((a, b) => a.availableAt - b.availableAt);
-    return availableMachines[0] || null;
+    return results;
   }
 }
 
-// Helper: get current time in minutes
-function getCurrentTimeInMinutes() {
-  const now = new Date();
-  return now.getHours() * 60 + now.getMinutes();
+// Helper function to convert minutes to time format
+function convertToTimeFormat(date) {
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
-// Convert minutes to 24-hour HH:MM format
-function convertToTime(timeInMinutes) {
-  const hours = Math.floor(timeInMinutes / 60);
-  const minutes = timeInMinutes % 60;
-  return `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}`;
+// Helper function to check if the date is a Sunday
+function isSunday(date) {
+  return date.getDay() === 0; // Sunday = 0
 }
 
-// Convert HH:MM to 12-hour format
-function convertTo12HourFormat(timeString) {
-  if (typeof timeString !== "string" || !timeString.includes(":"))
-    return "Invalid Time";
-  const [hours, minutes] = timeString.split(":").map(Number);
-  if (isNaN(hours) || isNaN(minutes)) return "Invalid Time";
+// Check if the current time is within working hours
+function withinWorkingHours(date, dailyMinutes, startTime) {
+  const workStart = new Date(startTime);
+  workStart.setHours(9, 0, 0, 0); // Assume workday starts at 9 AM
+  const workEnd = new Date(workStart);
+  workEnd.setHours(workStart.getHours() + dailyMinutes);
 
-  const period = hours >= 12 ? "PM" : "AM";
-  const hourIn12 = hours % 12 === 0 ? 12 : hours % 12;
-  return `${hourIn12}:${minutes.toString().padStart(2, "0")} ${period}`;
+  return date >= workStart && date <= workEnd;
 }
 
-// Store job counter
-let jobCounters = {
-  "Inner Bearing": 1,
-  "CVT Tank": 1,
-};
-
-// Save to localStorage with structure
-function saveToStorage(productName, scheduleData, startTime, endTime) {
-  const key = productName === "CVT Tank" ? "cvtJobs" : "innerBearingJobs";
-
-  const existingJobs = JSON.parse(localStorage.getItem(key)) || [];
-
-  const formattedStart = convertTo12HourFormat(convertToTime(startTime));
-  const formattedEnd = convertTo12HourFormat(convertToTime(endTime));
-
-  const jobEntry = {
-    name: `${productName} Job ${jobCounters[productName]++}`,
-    workTime: `From ${formattedStart} to ${formattedEnd}`,
-    value: scheduleData,
-  };
-
-  existingJobs.push(jobEntry);
-  localStorage.setItem(key, JSON.stringify(existingJobs));
+// Get the next available working slot
+function nextWorkingSlot(current, dailyMinutes, startTime) {
+  let nextSlot = new Date(current);
+  nextSlot.setHours(nextSlot.getHours() + 1); // Skip 1 hour
+  return nextSlot;
 }
 
-// Initialize machines
+// Initialize the machines
 const machines = [
   new Machine("VTL"),
   new Machine("VMC 1"),
@@ -128,7 +123,6 @@ const machines = [
   new Machine("Welding 2"),
   new Machine("Welding 3"),
   new Machine("Welding 4"),
-  new Machine("Welding 5"),
   new Machine("Manual 1"),
   new Machine("Manual 2"),
   new Machine("Manual 3"),
@@ -137,7 +131,7 @@ const machines = [
   new Machine("Manual 6"),
 ];
 
-// Products
+// Define products
 const innerBearing = new Product("Inner Bearing", [
   { name: "Cutting", processTime: 30, machineNeeded: "VTL" },
   { name: "Slot Mill", processTime: 50, machineNeeded: "VMC 1" },
@@ -162,50 +156,62 @@ const cvtTank = new Product("CVT Tank", [
   },
 ]);
 
-let fullSchedule = [];
-let globalCurrentTime = getCurrentTimeInMinutes();
+// Handle form submission
+document
+  .getElementById("schedulerForm")
+  .addEventListener("submit", function (e) {
+    e.preventDefault();
 
-// Add a job and update schedule
-function addJob(productName, quantity) {
-  let selectedProduct;
+    const startDate = document.getElementById("startDate").value;
+    const endDate = document.getElementById("endDate").value;
+    const quantity = parseInt(document.getElementById("quantity").value);
+    const product = document.getElementById("product").value;
+    const workingHours = parseInt(
+      document.getElementById("workingHours").value
+    );
 
-  if (productName === "Inner Bearing") selectedProduct = innerBearing;
-  else if (productName === "CVT Tank") selectedProduct = cvtTank;
+    if (!startDate || !endDate || isNaN(quantity)) {
+      alert("Please fill in all fields correctly.");
+      return;
+    }
 
-  if (!selectedProduct) return;
+    let selectedProduct;
 
-  const { schedule, totalTime } = selectedProduct.scheduleProcesses(
-    machines,
-    quantity,
-    globalCurrentTime
-  );
+    if (product === "Inner Bearing") selectedProduct = innerBearing;
+    else if (product === "CVT Tank") selectedProduct = cvtTank;
 
-  fullSchedule = [...fullSchedule, ...schedule];
-  saveToStorage(productName, schedule, globalCurrentTime, totalTime);
-  globalCurrentTime = Math.max(globalCurrentTime, totalTime);
-}
+    const schedule = selectedProduct.schedule(
+      machines,
+      quantity,
+      new Date(startDate),
+      workingHours * 60 // Convert to minutes
+    );
 
-// Reset the scheduler
-function resetScheduler() {
-  fullSchedule = [];
-  globalCurrentTime = getCurrentTimeInMinutes();
-  machines.forEach((machine) => {
-    machine.availableAt = globalCurrentTime;
+    displaySchedule(schedule);
+    saveToLocalStorage(schedule);
   });
 
-  // Reset job counters and localStorage (optional if you want to clear)
-  jobCounters = { "Inner Bearing": 1, "CVT Tank": 1 };
-  localStorage.removeItem("innerBearingJobs");
-  localStorage.removeItem("cvtJobs");
+// Display the schedule in the table
+function displaySchedule(schedule) {
+  const scheduleTableBody = document.querySelector("#scheduleTable tbody");
+  scheduleTableBody.innerHTML = "";
+
+  schedule.forEach((task) => {
+    const row = document.createElement("tr");
+    row.innerHTML = ` 
+      <td>${task.partNo}</td>
+      <td>${task.process}</td>
+      <td>${task.machine}</td>
+      <td>${task.start}</td>
+      <td>${task.end}</td>
+    `;
+    scheduleTableBody.appendChild(row);
+  });
+
+  document.getElementById("scheduleTable").style.display = "table";
 }
 
-// Get displayable schedule
-function getScheduleTable() {
-  return fullSchedule.map((task) => ({
-    partNo: task.partNo,
-    process: task.process,
-    machine: task.machine,
-    start: convertToTime(task.startTime),
-    end: convertToTime(task.endTime),
-  }));
+// Save the schedule to localStorage
+function saveToLocalStorage(schedule) {
+  localStorage.setItem("schedule", JSON.stringify(schedule));
 }

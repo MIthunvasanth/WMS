@@ -1,141 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>CVT Tank Work</title>
+  <meta charset="UTF-8">
+  <title>Machine Usage Summary</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f9fafb;
-      color: #333;
-    }
-    a {
-      display: inline-block;
-      margin-bottom: 20px;
-      padding: 10px 20px;
-      background-color: #284ea7;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-      transition: background-color 0.3s ease;
-    }
-    a:hover {
-      background-color: #284ea7;
+      margin: 40px;
+      background: #f9f9f9;
     }
     h1 {
       text-align: center;
-      color: #284ea7;
-      margin-bottom: 30px;
-    }
-    .job-container {
-      margin-bottom: 30px;
-      padding: 20px;
-      background-color: white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-      border-radius: 10px;
-    }
-    .job-header {
-      font-size: 1.5rem;
-      font-weight: bold;
       color: #333;
     }
-    .work-time {
+    .summary-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+    }
+    .machine-name {
+      font-weight: bold;
       color: #555;
-      margin-bottom: 20px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-      margin-top: 20px;
-    }
-    th, td {
-      padding: 12px 15px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    th {
-      background-color: #284ea7;
-      color: white;
-    }
-    tr:nth-child(even) {
-      background-color: #f1f1f1;
-    }
-    tr:hover {
-      background-color: #eae9f5;
+    .machine-time {
+      color: #007bff;
     }
   </style>
 </head>
-<body style="overflow-y: hidden;">
-  <div style="height: 100vh;">
-  <div style="height: 20%;">
-    <a href="assign.html">← Back to All Work</a>
-    <h1>CVT TANK WORKS</h1>
+<body>
+  <h1>Machine Usage Summary</h1>
+  <div class="summary-container">
+    <ul id="machineSummaryList"></ul>
   </div>
-  <div style="height: 80%;overflow-y: scroll;">
-  <div id="jobList" ></div>
-</div>
-</div>
+
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const cvtJobs = JSON.parse(localStorage.getItem('cvtJobs')) || [];
-      console.log(cvtJobs);
+    function calculateMachineUsage() {
+      const schedule = JSON.parse(localStorage.getItem("scheduledTimeline")) || [];
+      const machineUsage = {};
 
-      const jobListContainer = document.getElementById('jobList');
+      for (const job of schedule) {
+        const machine = job.machine;
+        const start = new Date(job.start);
+        const end = new Date(job.end);
+        const duration = (end - start) / 60000; // in minutes
 
-      cvtJobs.forEach((job, index) => {
-        const jobContainer = document.createElement('div');
-        jobContainer.classList.add('job-container');
-        const jobHeader = document.createElement('div');
-        jobHeader.classList.add('job-header');
-        jobHeader.innerHTML = `${'CVT TANK JOB '}${index + 1}`;
+        if (!machineUsage[machine]) {
+          machineUsage[machine] = 0;
+        }
 
-        
-        const workTime = document.createElement('div');
-        workTime.classList.add('work-time');
-        workTime.innerHTML = `Work Time: ${job.workTime}`;
-        jobContainer.appendChild(jobHeader);
-        jobContainer.appendChild(workTime);
-        const processTable = document.createElement('table');
-        const tableHeader = document.createElement('thead');
-        tableHeader.innerHTML = `
-          <tr>
-            <th>Process</th>
-            <th>Machine</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-          </tr>
-        `;
-        processTable.appendChild(tableHeader);
+        machineUsage[machine] += duration;
+      }
 
-        const tableBody = document.createElement('tbody');
-        job.value.forEach((process, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>Process ${index + 1}</td>
-            <td>${process.machine}</td>
-            <td>${convertTo12HourFormat(process.startTime)}</td>
-            <td>${convertTo12HourFormat(process.endTime)}</td>
-          `;
-          tableBody.appendChild(row);
-        });
-
-        processTable.appendChild(tableBody);
-        jobContainer.appendChild(processTable);
-        jobListContainer.appendChild(jobContainer);
-      });
-    });
-
-    function convertTo12HourFormat(timeString) {
-      const hours = Math.floor(timeString / 60);
-      const minutes = timeString % 60;
-      const period = hours >= 12 ? 'PM' : 'AM';
-      const hourIn12 = hours % 12 === 0 ? 12 : hours % 12;
-      return `${hourIn12}:${minutes.toString().padStart(2, '0')} ${period}`;
+      return machineUsage;
     }
-  </script>
 
+    function formatDuration(minutes) {
+      const hrs = Math.floor(minutes / 60);
+      const mins = Math.round(minutes % 60);
+      return `${hrs}h ${mins}m`;
+    }
+
+    function renderMachineSummary() {
+      const summaryList = document.getElementById("machineSummaryList");
+      const usage = calculateMachineUsage();
+      const machines = Object.keys(usage).sort();
+
+      if (machines.length === 0) {
+        summaryList.innerHTML = "<li>No schedule data found.</li>";
+        return;
+      }
+
+      machines.forEach(machine => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span class="machine-name">${machine}</span>
+          <span class="machine-time">${formatDuration(usage[machine])}</span>
+        `;
+        summaryList.appendChild(li);
+      });
+    }
+
+    renderMachineSummary();
+  </script>
 </body>
 </html>

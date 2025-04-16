@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CVT Tank Work</title>
+  <title>Inner Bearing Work</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -68,38 +68,35 @@
     }
   </style>
 </head>
-<body style="overflow-y: hidden;">
+<body>
   <div style="height: 100vh;">
-  <div style="height: 20%;">
-    <a href="assign.html">← Back to All Work</a>
-    <h1>INNER BREARING WORKS</h1>
+    <div style="height: 20%;">
+      <a href="assign.html">← Back to All Work</a>
+      <h1>INNER BEARING WORKS</h1>
+    </div>
+    <div style="height: 80%; overflow-y: scroll;">
+      <div id="jobList"></div>
+    </div>
   </div>
-  <div style="height: 80%;overflow-y: scroll;">
-  <div id="jobList" ></div>
-</div>
-</div>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const cvtJobs = JSON.parse(localStorage.getItem('innerBearingJobs')) || [];
-      console.log(cvtJobs);
+      const innerBearingJobs = JSON.parse(localStorage.getItem('innerBearingJobs')) || [];
+      console.log(innerBearingJobs);
 
+      // Machine Summary to store total work time for each machine
+      const machineSummary = {};
+
+      // Prepare a container to hold all the job information
       const jobListContainer = document.getElementById('jobList');
 
-      cvtJobs.forEach((job,index) => {
+      // Loop through each job and its processes
+      innerBearingJobs.forEach((job, index) => {
         const jobContainer = document.createElement('div');
         jobContainer.classList.add('job-container');
 
         const jobHeader = document.createElement('div');
         jobHeader.classList.add('job-header');
-        jobHeader.innerHTML = `${'INNER BEARING JOB '}${index + 1}`;
-
-        
-        const workTime = document.createElement('div');
-        workTime.classList.add('work-time');
-        workTime.innerHTML = `Work Time: ${job.workTime}`;
-
-        jobContainer.appendChild(jobHeader);
-        jobContainer.appendChild(workTime);
+        jobHeader.innerHTML = `INNER BEARING JOB ${index + 1}`;
 
         const processTable = document.createElement('table');
         const tableHeader = document.createElement('thead');
@@ -109,36 +106,429 @@
             <th>Machine</th>
             <th>Start Time</th>
             <th>End Time</th>
+            <th>Duration</th>
           </tr>
         `;
         processTable.appendChild(tableHeader);
 
         const tableBody = document.createElement('tbody');
-        job.value.forEach((process, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>Process ${index + 1}</td>
-            <td>${process.machine}</td>
-            <td>${convertTo12HourFormat(process.startTime)}</td>
-            <td>${convertTo12HourFormat(process.endTime)}</td>
-          `;
-          tableBody.appendChild(row);
-        });
+        let totalJobTime = 0; // Track the total time for this job
+
+        // Check if job.value exists and is an array
+        if (Array.isArray(job.value)) {
+          job.value.forEach((process) => {
+            const row = document.createElement('tr');
+
+            // Calculate the duration for each process in minutes
+            const duration = (new Date(process.end) - new Date(process.start)) / 60000;
+
+            // Add duration to the total job time
+            totalJobTime += duration;
+
+            row.innerHTML = `
+              <td>${process.process}</td>
+              <td>${process.machine}</td>
+              <td>${convertTo12HourFormat(process.start)}</td>
+              <td>${convertTo12HourFormat(process.end)}</td>
+              <td>${duration} min</td>
+            `;
+            tableBody.appendChild(row);
+
+            // Update the machine summary with total time
+            if (!machineSummary[process.machine]) {
+              machineSummary[process.machine] = 0;
+            }
+            machineSummary[process.machine] += duration;
+          });
+        } else {
+          console.error(`Job ${index + 1} does not have a valid 'value' property or it's not an array.`);
+        }
 
         processTable.appendChild(tableBody);
+        jobContainer.appendChild(jobHeader);
         jobContainer.appendChild(processTable);
+
+        // Add work time for the job
+        const workTime = document.createElement('div');
+        workTime.classList.add('work-time');
+        workTime.innerHTML = `Total Work Time for Job: ${totalJobTime} min`;
+        jobContainer.appendChild(workTime);
+
         jobListContainer.appendChild(jobContainer);
       });
+
+      // Display Machine Time Summary
+      const machineSummaryContainer = document.createElement('div');
+      machineSummaryContainer.classList.add('machine-summary');
+      machineSummaryContainer.innerHTML = "<h2>Machine Time Summary</h2>";
+
+      const summaryTable = document.createElement('table');
+      summaryTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>Machine</th>
+            <th>Total Work Time (hours)</th>
+          </tr>
+        </thead>
+        <tbody>
+      `;
+      Object.keys(machineSummary).forEach((machine) => {
+        const row = document.createElement('tr');
+        const totalMinutes = machineSummary[machine];
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        row.innerHTML = `
+          <td>${machine}</td>
+          <td>${hours}h ${minutes}m</td>
+        `;
+        summaryTable.appendChild(row);
+      });
+      summaryTable.innerHTML += "</tbody>";
+      machineSummaryContainer.appendChild(summaryTable);
+      jobListContainer.appendChild(machineSummaryContainer);
     });
 
+    // Helper function to convert time to 12-hour format
     function convertTo12HourFormat(timeString) {
-      const hours = Math.floor(timeString / 60);
-      const minutes = timeString % 60;
+      const date = new Date(timeString);
+      let hours = date.getHours();
+      let minutes = date.getMinutes();
       const period = hours >= 12 ? 'PM' : 'AM';
-      const hourIn12 = hours % 12 === 0 ? 12 : hours % 12;
-      return `${hourIn12}:${minutes.toString().padStart(2, '0')} ${period}`;
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours}:${minutes.toString().padStart(2, '0')} ${period}`;
     }
   </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inner Bearing Work</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f9fafb;
+      color: #333;
+    }
+    a {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    a:hover {
+      background-color: #218838;
+    }
+    h1 {
+      text-align: center;
+      color: #28a745;
+      margin-bottom: 30px;
+    }
+    .job-container {
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+    }
+    .job-header {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #333;
+    }
+    .work-time {
+      color: #555;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #28a745;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f1f1f1;
+    }
+    tr:hover {
+      background-color: #e9f5e9;
+    }
+  </style>
+</head>
+<body>
+  <div style="height: 100vh;">
+    <div style="height: 20%;">
+      <a href="assign.html">← Back to All Work</a>
+      <h1>INNER BEARING WORKS</h1>
+    </div>
+    <div style="height: 80%; overflow-y: scroll;">
+      <div id="jobList"></div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const innerBearingJobs = JSON.parse(localStorage.getItem('innerBearingJobs')) || [];
+      console.log(innerBearingJobs);
 
+      // Machine Summary to store total work time for each machine
+      const machineSummary = {};
+
+      // Prepare a container to hold all the job information
+      const jobListContainer = document.getElementById('jobList');
+
+      // Loop through each job and its processes
+      innerBearingJobs.forEach((job, index) => {
+        const jobContainer = document.createElement('div');
+        jobContainer.classList.add('job-container');
+
+        const jobHeader = document.createElement('div');
+        jobHeader.classList.add('job-header');
+        jobHeader.innerHTML = `INNER BEARING JOB ${index + 1}`;
+
+        const processTable = document.createElement('table');
+        const tableHeader = document.createElement('thead');
+        tableHeader.innerHTML = `
+          <tr>
+            <th>Process</th>
+            <th>Machine</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Duration</th>
+          </tr>
+        `;
+        processTable.appendChild(tableHeader);
+
+        const tableBody = document.createElement('tbody');
+        let totalJobTime = 0; // Track the total time for this job
+
+        // Check if job.value exists and is an array
+        if (Array.isArray(job.value)) {
+          job.value.forEach((process) => {
+            const row = document.createElement('tr');
+
+            // Calculate the duration for each process in minutes
+            const duration = (new Date(process.end) - new Date(process.start)) / 60000;
+
+            // Add duration to the total job time
+            totalJobTime += duration;
+
+            row.innerHTML = `
+              <td>${process.process}</td>
+              <td>${process.machine}</td>
+              <td>${convertTo12HourFormat(process.start)}</td>
+              <td>${convertTo12HourFormat(process.end)}</td>
+              <td>${duration} min</td>
+            `;
+            tableBody.appendChild(row);
+
+            // Update the machine summary with total time
+            if (!machineSummary[process.machine]) {
+              machineSummary[process.machine] = 0;
+            }
+            machineSummary[process.machine] += duration;
+          });
+        } else {
+          console.error(`Job ${index + 1} does not have a valid 'value' property or it's not an array.`);
+        }
+
+        processTable.appendChild(tableBody);
+        jobContainer.appendChild(jobHeader);
+        jobContainer.appendChild(processTable);
+
+        // Add work time for the job
+        const workTime = document.createElement('div');
+        workTime.classList.add('work-time');
+        workTime.innerHTML = `Total Work Time for Job: ${totalJobTime} min`;
+        jobContainer.appendChild(workTime);
+
+        jobListContainer.appendChild(jobContainer);
+      });
+
+      // Display Machine Time Summary
+      const machineSummaryContainer = document.createElement('div');
+      machineSummaryContainer.classList.add('machine-summary');
+      machineSummaryContainer.innerHTML = "<h2>Machine Time Summary</h2>";
+
+      const summaryTable = document.createElement('table');
+      summaryTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>Machine</th>
+            <th>Total Work Time (hours)</th>
+          </tr>
+        </thead>
+        <tbody>
+      `;
+      Object.keys(machineSummary).forEach((machine) => {
+        const row = document.createElement('tr');
+        const totalMinutes = machineSummary[machine];
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        row.innerHTML = `
+          <td>${machine}</td>
+          <td>${hours}h ${minutes}m</td>
+        `;
+        summaryTable.appendChild(row);
+      });
+      summaryTable.innerHTML += "</tbody>";
+      machineSummaryContainer.appendChild(summaryTable);
+      jobListContainer.appendChild(machineSummaryContainer);
+    });
+
+    // Helper function to convert time to 12-hour format
+    function convertTo12HourFormat(timeString) {
+      const date = new Date(timeString);
+      let hours = date.getHours();
+      let minutes = date.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inner Bearing Work</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f9fafb;
+      color: #333;
+    }
+    a {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    a:hover {
+      background-color: #218838;
+    }
+    h1 {
+      text-align: center;
+      color: #28a745;
+      margin-bottom: 30px;
+    }
+    .job-container {
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+    }
+    .job-header {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #333;
+    }
+    .work-time {
+      color: #555;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #28a745;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f1f1f1;
+    }
+    tr:hover {
+      background-color: #e9f5e9;
+    }
+  </style>
+</head>
+<body>
+  <div style="height: 100vh;">
+    <div style="height: 20%;">
+      <a href="assign.html">← Back to All Work</a>
+      <h1>INNER BEARING WORKS</h1>
+    </div>
+    <div style="height: 80%; overflow-y: scroll;">
+      <div id="jobList"></div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+  const innerBearingJobs = JSON.parse(localStorage.getItem('innerbearingSchedule')) || [];
+
+  const processSummary = {}; // Group by process
+
+  innerBearingJobs.forEach((process) => {
+    if (!process.start || !process.end) return;
+
+    const duration = (new Date(process.end) - new Date(process.start)) / 60000; // minutes
+
+    if (!processSummary[process.process]) {
+      processSummary[process.process] = {
+        machine: process.machine,
+        totalTime: 0,
+        count: 0
+      };
+    }
+
+    processSummary[process.process].totalTime += duration;
+    processSummary[process.process].count += 1;
+  });
+
+  // Log nicely
+  const summaryDiv = document.getElementById("jobList");
+summaryDiv.innerHTML = "<h3>🔧 Process Duration Summary</h3>";
+
+Object.entries(processSummary).forEach(([processName, info]) => {
+  const hours = Math.floor(info.totalTime / 60);
+  const minutes = Math.round(info.totalTime % 60);
+
+  const card = document.createElement("div");
+  card.className = "process-card";
+  card.innerHTML = `
+    <strong>🛠️ Process:</strong> ${processName}<br>
+    <strong>🔩 Machine:</strong> ${info.machine}<br>
+    <strong>⏱️ Total Time:</strong> ${hours}h ${minutes}m<br>
+    <strong>🔁 Occurrences:</strong> ${info.count}<br><br>
+  `;
+  
+  summaryDiv.appendChild(card);
+});
+
+});
+
+  </script>
 </body>
 </html>
