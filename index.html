@@ -4,194 +4,293 @@
   <meta charset="UTF-8" />
   <title>Assign Work</title>
   <style>
-    /* Same clean modern styling as before */
-    * { box-sizing: border-box; }
+    :root {
+      --primary: #007bff;
+      --primary-dark: #0056b3;
+      --background: #f4f8ff;
+      --white: #ffffff;
+      --text: #333;
+      --accent-green: #28a745;
+      --accent-red: #dc3545;
+      --accent-blue-dark: #284ea7;
+    }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f0f4f8;
-      padding: 40px;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
+      padding: 20px;
+      background-color: var(--background);
+      color: var(--text);
     }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      padding: 30px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+    h1 {
+      text-align: center;
+      color: var(--primary-dark);
+      margin-bottom: 30px;
     }
-    h1 { text-align: center; color: #333; }
-    label { display: block; margin-top: 15px; font-weight: 500; color: #555; }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-    input { border: 1px solid #ccc; }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-      transition: 0.3s;
-      margin-top: 20px;
-    }
-    button:hover { background: #0056b3; }
-    .link-buttons {
-      display: flex;
-      justify-content: space-between;
-      gap: 15px;
-      margin-top: 30px;
-    }
-    .btn-view {
-      flex: 1;
-      border: none;
-      color: white;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      padding: 12px;
-    }
-    .green { background: #28a745; }
-    .blue { background: #284ea7; }
+
     .back-link {
       display: inline-block;
       margin-bottom: 20px;
       text-decoration: none;
-      color: #007bff;
-      font-weight: bold;
+      font-size: 16px;
+      color: var(--primary);
+    }
+
+    form {
+      background: var(--white);
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.1);
+    }
+
+    form label {
+      display: block;
+      margin: 15px 0 5px;
+      font-weight: 600;
+    }
+
+    form input, form select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 600;
+      transition: background 0.3s ease;
+      cursor: pointer;
+    }
+
+    button[type="submit"] {
+      background-color: var(--primary);
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    button[type="submit"]:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .listbutton, .buttons {
+      text-align: center;
+      margin-top: 25px;
+    }
+
+    .btn-view {
+      background-color: var(--accent-green);
+    }
+
+    .btn-view.alt {
+      background-color: var(--accent-blue-dark);
+    }
+
+    .btn-reset {
+      background-color: var(--accent-red);
+    }
+
+    .btn-view:hover,
+    .btn-reset:hover {
+      opacity: 0.9;
+    }
+
+    .schedule-output {
+      max-width: 800px;
+      margin: 40px auto;
+      background: var(--white);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    }
+
+    .schedule-output h2 {
+      text-align: center;
+      color: var(--primary-dark);
+      margin-bottom: 20px;
+    }
+
+    .schedule-output table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .schedule-output th, .schedule-output td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .schedule-output th {
+      background-color: #e6f0ff;
     }
   </style>
 </head>
-<body>
-
-<a class="back-link" href="index.html">← Back</a>
-
-<div class="container">
+<body>  
   <h1>Assign Work</h1>
 
   <form id="assignmentForm">
-    <label>Inner Bearing Quantity:
-      <input type="number" name="innerBearing" min="0" />
-    </label>
-    <label>CVT Tank Quantity:
-      <input type="number" name="cvtTank" min="0" />
-    </label>
-    <label>Start Date & Time:
-      <input type="datetime-local" name="startTime" required />
-    </label>
-    <label>End Date & Time:
-      <input type="datetime-local" name="endTime" required />
-    </label>
-    <label>Daily Work Hours:
-      <input type="number" name="dailyHours" min="1" max="24" required />
-    </label>
+    <label for="product">Select Product:</label>
+    <select name="product" id="product" required>
+      <option value="">-- Select Product --</option>
+      <option value="Inner Bearing">Inner Bearing</option>
+      <option value="CVT Tank">CVT Tank</option>
+    </select>
+
+    <label for="quantity">Quantity:</label>
+    <input type="number" name="quantity" id="quantity" min="1" required />
+
+    <label for="startDate">Start Date:</label>
+    <input type="date" name="startDate" id="startDate" required />
+
+    <label for="endDate">End Date:</label>
+    <input type="date" name="endDate" id="endDate" required />
+
+    <label for="dailyHours">Working Hours per Day:</label>
+    <input type="number" name="dailyHours" id="dailyHours" min="1" max="24" required />
+
     <button type="submit">Schedule</button>
   </form>
 
-  <div class="link-buttons">
-    <button class="btn-view green" onclick="window.location.href='list-inner-bearing.html'">View Inner Bearing Work</button>
-    <button class="btn-view blue" onclick="window.location.href='list-cvt-tank.html'">View CVT Tank Work</button>
+  <div class="listbutton">
+    <button class="btn-view" onclick="window.location.href = 'list-inner-bearing.html'">View Inner Bearing Work</button>
+    <button class="btn-view alt" onclick="window.location.href = 'list-cvt-tank.html'">View CVT Tank Work</button>
   </div>
-</div>
 
-<script>
-const products = {
-  "Inner Bearing": [
-    { name: "Cutting", processTime: 30, machineNeeded: "VTL" },
-    { name: "Slot Mill", processTime: 50, machineNeeded: "VMC 1" },
-    { name: "Debour", processTime: 20, machineNeeded: "Manual 1" },
-    { name: "Tapping", processTime: 12, machineNeeded: "CNC Tapping" },
-    { name: "Marking", processTime: 3, machineNeeded: "Dot Marking" },
-    { name: "Welding", processTime: 40, machineNeeded: ["Welding 1", "Welding 2", "Welding 3", "Welding 4"] }
-  ],
-  "CVT Tank": [
-    { name: "Marking", processTime: 2, machineNeeded: "Dot Marking" },
-    { name: "Bending", processTime: 24, machineNeeded: "Press Brake" },
-    { name: "Setting", processTime: 20, machineNeeded: "Welding 3" },
-    { name: "Full Weld", processTime: 40, machineNeeded: ["Welding 1", "Welding 2", "Welding 3", "Welding 4"] }
-  ]
-};
+  <div class="buttons">
+    <button class="btn-reset" id="resetBtn">Reset Scheduler</button>
+  </div>
 
-function addJob(productName, quantity, startTime, endTime, dailyHours) {
-  const processList = products[productName];
-  const dailyLimit = dailyHours * 60;
-  let workDayStart = new Date(startTime);
-  const workDayEnd = new Date(endTime);
+  <div class="schedule-output" id="scheduleOutput" style="display: none;">
+    <h2>Scheduled Tasks</h2>
+    <div id="scheduleTableContainer"></div>
+  </div>
 
-  let workMinutesUsed = 0;
-  let currentTime = new Date(workDayStart);
-  const schedule = [];
+  <script>
 
-  for (let i = 1; i <= quantity; i++) {
-    for (const proc of processList) {
-      const machine = Array.isArray(proc.machineNeeded)
-        ? proc.machineNeeded[Math.floor(Math.random() * proc.machineNeeded.length)]
-        : proc.machineNeeded;
-
-      if (workMinutesUsed + proc.processTime > dailyLimit) {
-        workDayStart.setDate(workDayStart.getDate() + 1);
-        workDayStart.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
-        workMinutesUsed = 0;
-        currentTime = new Date(workDayStart);
-        if (currentTime > workDayEnd) {
-          alert("Not enough time between start and end to finish scheduling!");
+    const products = {
+      "Inner Bearing": [
+        { name: "Cutting", processTime: 30, machineNeeded: "VTL" },
+        { name: "Slot Mill", processTime: 50, machineNeeded: "VMC 1" },
+        { name: "Debour", processTime: 20, machineNeeded: "Manual 1" },
+        { name: "Tapping", processTime: 12, machineNeeded: "CNC Tapping" },
+        { name: "Marking", processTime: 3, machineNeeded: "Dot Marking" },
+        { name: "Welding", processTime: 40, machineNeeded: ["Welding 1", "Welding 2", "Welding 3", "Welding 4"] }
+      ],
+      "CVT Tank": [
+        { name: "Marking", processTime: 2, machineNeeded: "Dot Marking" },
+        { name: "Bending", processTime: 24, machineNeeded: "Press Brake" },
+        { name: "Setting", processTime: 20, machineNeeded: "Welding 3" },
+        { name: "Full Weld", processTime: 40, machineNeeded: ["Welding 1", "Welding 2", "Welding 3", "Welding 4"] }
+      ]
+    };
+    
+    let innerBearingJob = JSON.parse(localStorage.getItem("innerBearingJob")) || {};
+    let cvtJob = JSON.parse(localStorage.getItem("cvtJob")) || {};
+    
+    document.getElementById("assignmentForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+    
+      const product = document.getElementById("product").value;
+      const quantity = parseInt(document.getElementById("quantity").value);
+      const startDate = new Date(document.getElementById("startDate").value);
+      const endDate = new Date(document.getElementById("endDate").value);
+      const dailyHours = parseInt(document.getElementById("dailyHours").value);
+    
+      if (endDate < startDate) {
+        alert("End date cannot be before start date.");
+        return;
+      }
+    
+      const workingDays = [];
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        if (currentDate.getDay() !== 0) {
+          workingDays.push(new Date(currentDate));
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    
+      const tasks = [];
+      for (const process of products[product]) {
+        const time = process.processTime * quantity;
+        if (Array.isArray(process.machineNeeded)) {
+          const splitTime = Math.ceil(time / process.machineNeeded.length);
+          for (const machine of process.machineNeeded) {
+            tasks.push({ process: process.name, machine, duration: splitTime });
+          }
+        } else {
+          tasks.push({ process: process.name, machine: process.machineNeeded, duration: time });
+        }
+      }
+    
+      const scheduleMap = {};
+      const machineDayMap = {};
+      let allMachines = new Set();
+    
+      for (const task of tasks) {
+        let remaining = task.duration;
+        let scheduled = false;
+    
+        for (let i = 0; i < workingDays.length; i++) {
+          const dateStr = workingDays[i].toISOString().split('T')[0];
+          if (!scheduleMap[dateStr]) scheduleMap[dateStr] = {};
+          if (!machineDayMap[dateStr]) machineDayMap[dateStr] = {};
+          if (!machineDayMap[dateStr][task.machine]) machineDayMap[dateStr][task.machine] = 0;
+    
+          const available = dailyHours * 60 - machineDayMap[dateStr][task.machine];
+    
+          if (available > 0) {
+            const allocated = Math.min(remaining, available);
+            if (!scheduleMap[dateStr][task.machine]) scheduleMap[dateStr][task.machine] = [];
+            scheduleMap[dateStr][task.machine].push({ process: task.process, duration: allocated });
+            machineDayMap[dateStr][task.machine] += allocated;
+            remaining -= allocated;
+            allMachines.add(task.machine);
+          }
+    
+          if (remaining <= 0) {
+            scheduled = true;
+            break;
+          }
+        }
+    
+        if (!scheduled) {
+          const totalMinutes = task.duration;
+          const totalAvailableMinutes = workingDays.length * dailyHours * 60;
+          const suggestedHours = Math.ceil(totalMinutes / (workingDays.length * 60));
+          alert(`Cannot complete "${task.process}" for ${product}. Either increase working hours (min ${suggestedHours}h/day) or extend date range.`);
           return;
         }
       }
+    
+      if (product === "Inner Bearing") {
+        localStorage.setItem("innerBearingJob", JSON.stringify(scheduleMap));
+        innerBearingJob = scheduleMap;
+      } else if (product === "CVT Tank") {
+        localStorage.setItem("cvtJob", JSON.stringify(scheduleMap));
+        cvtJob = scheduleMap;
+      }
+    
+      renderSchedule(scheduleMap, Array.from(allMachines));
+    });
 
-      const jobStart = new Date(currentTime);
-      const jobEnd = new Date(currentTime.getTime() + proc.processTime * 60000);
+    document.getElementById("resetBtn").addEventListener("click", function () {
+      localStorage.removeItem("innerBearingJob");
+      localStorage.removeItem("cvtJob");
+      alert("Schedule has been reset.");
+      document.getElementById("scheduleOutput").style.display = "none";
+    });
+    
 
-      schedule.push({
-        product: productName,
-        process: proc.name,
-        machine,
-        quantity: 1,
-        start: jobStart,
-        end: jobEnd,
-        completed: false
-      });
-
-      currentTime = new Date(jobEnd);
-      workMinutesUsed += proc.processTime;
-    }
-
-    currentTime.setMinutes(currentTime.getMinutes() + 60); // 1 hour break between units
-  }
-
-  const key = productName.replace(/\s+/g, '').toLowerCase() + "Schedule";
-  const existing = JSON.parse(localStorage.getItem(key)) || [];
-  localStorage.setItem(key, JSON.stringify([...existing, ...schedule]));
-}
-
-document.getElementById('assignmentForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-  const form = new FormData(e.target);
-  const innerQty = parseInt(form.get('innerBearing')) || 0;
-  const cvtQty = parseInt(form.get('cvtTank')) || 0;
-  const startTime = new Date(form.get('startTime'));
-  const endTime = new Date(form.get('endTime'));
-  const dailyHours = parseInt(form.get('dailyHours')) || 8;
-
-  if (endTime <= startTime) {
-    alert("End time must be after start time.");
-    return;
-  }
-
-  if (innerQty > 0) addJob("Inner Bearing", innerQty, startTime, endTime, dailyHours);
-  if (cvtQty > 0) addJob("CVT Tank", cvtQty, startTime, endTime, dailyHours);
-
-  if (innerQty || cvtQty) {
-    alert("Schedule successfully assigned!");
-    e.target.reset();
-  } else {
-    alert("Please enter at least one quantity.");
-  }
-});
-</script>
-
+    </script>
 </body>
 </html>

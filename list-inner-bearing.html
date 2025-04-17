@@ -2,169 +2,202 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Machine Time Summary by Date</title>
+  <title>Inner Bearing Jobs</title>
   <style>
-    /* Add your existing styles here */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
+    * {
+      box-sizing: border-box;
     }
 
-    .container {
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background-color: #e6f0fa;
+      color: #003366;
     }
 
     .header {
-      background-color: #4CAF50;
-      color: white;
+      position: sticky;
+      top: 0;
+      background-color: #005eb8;
       padding: 20px;
+      color: white;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .back-link {
+      text-decoration: none;
+      font-size: 16px;
+      color: #ffffff;
+      font-weight: bold;
+      transition: opacity 0.3s;
+    }
+
+    .back-link:hover {
+      opacity: 0.8;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin: 10px 0;
+      flex-grow: 1;
       text-align: center;
     }
 
-    .machine-summary {
-      flex: 1;
-      overflow-y: auto;
+    .schedule-output {
+      max-width: 1000px;
+      margin: 20px auto;
+      background: #ffffff;
       padding: 20px;
-      background-color: white;
-      margin: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    h1 {
-      margin: 0;
-      font-size: 24px;
+    .schedule-output h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #003366;
     }
 
-    h2 {
-      color: #333;
-      font-size: 20px;
-      margin-bottom: 15px;
+    .schedule-table-wrapper {
+      max-height: 500px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-bottom: 30px;
+    }
+
+    caption {
+      caption-side: top;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #005eb8;
     }
 
     th, td {
+      border: 1px solid #bcd;
       padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
+      text-align: center;
     }
 
-    th {
-      background-color: #f2f2f2;
+    thead {
+      background-color: #cce5ff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
-    tr:hover {
-      background-color: #f1f1f1;
+    tbody tr:nth-child(even) {
+      background-color: #f4f9ff;
     }
 
-    .back-link {
-      display: inline-block;
-      text-decoration: none;
-      color: #4CAF50;
-      margin: 20px;
-      font-size: 16px;
+    tbody tr:hover {
+      background-color: #e6f0ff;
+      transition: 0.2s;
     }
 
-    .back-link:hover {
-      text-decoration: underline;
+    td.idle {
+      background-color: #ccffcc;
+      font-style: italic;
+      font-weight: bold;
+      color: #006400;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 18px;
+      }
+
+      .schedule-output {
+        padding: 15px;
+      }
+
+      th, td {
+        font-size: 14px;
+        padding: 8px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <a href="assign.html" class="back-link">← Back to All Work</a>
-      <h1>Machine Time Summary by Date</h1>
-    </div>
-    <div class="machine-summary" id="machineSummary">
-      <!-- Machine Summary Table will go here -->
-    </div>
+
+  <div class="header">
+    <a class="back-link" href="index.html">← Back</a>
+    <h1>Inner Bearing Job Processes</h1>
+  </div>
+
+  <div class="schedule-output" id="scheduleOutput">
+    <h2>Scheduled Tasks</h2>
+    <div class="schedule-table-wrapper" id="scheduleTableContainer"></div>
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const innerBearingJobs = JSON.parse(localStorage.getItem('innerbearingSchedule')) || [];
-      
-      const machineDateSummary = {};
+    const machineOrder = [
+      "VTL",
+      "VMC 1",
+      "Manual 1",
+      "CNC Tapping",
+      "Dot Marking",
+      "Welding 1",
+      "Welding 2",
+      "Welding 3",
+      "Welding 4",
+    ];
 
-      // Function to format the date (only YYYY-MM-DD)
-      function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toISOString().split('T')[0];  // Format as YYYY-MM-DD
+    const innerBearingJob = JSON.parse(localStorage.getItem("innerBearingJob"));
+
+    function renderSchedule(scheduleMap) {
+      const container = document.getElementById("scheduleTableContainer");
+      container.innerHTML = '';
+
+      if (!scheduleMap || Object.keys(scheduleMap).length === 0) {
+        container.innerHTML = "<p>No scheduled tasks found for Inner Bearing.</p>";
+        return;
       }
 
-      // Group jobs by machine and date
-      innerBearingJobs.forEach((job) => {
-        const date = formatDate(job.start);  // Extract date part
-        const duration = (new Date(job.end) - new Date(job.start)) / 60000;  // Duration in minutes
-        
-        if (!machineDateSummary[date]) {
-          machineDateSummary[date] = {};  // Initialize date
-        }
+      for (const date of Object.keys(scheduleMap).sort()) {
+        const table = document.createElement("table");
+        const caption = document.createElement("caption");
+        caption.innerText = `DATE: ${date}`;
+        table.appendChild(caption);
 
-        if (!machineDateSummary[date][job.machine]) {
-          machineDateSummary[date][job.machine] = 0;  // Initialize machine
-        }
+        const thead = document.createElement("thead");
+        thead.innerHTML = `<tr><th>Machine</th><th>Total Work Time</th></tr>`;
+        table.appendChild(thead);
 
-        machineDateSummary[date][job.machine] += duration;  // Add duration to the machine on the given date
-      });
+        const tbody = document.createElement("tbody");
 
-      const machineSummaryContainer = document.getElementById('machineSummary');
-      const summaryTitle = document.createElement('h2');
-      summaryTitle.innerText = "Machine Work Summary by Date";
+        for (const machine of machineOrder) {
+          const tasks = scheduleMap[date][machine];
+          const total = tasks?.reduce((sum, task) => sum + task.duration, 0) || 0;
+          const hours = Math.floor(total / 60);
+          const minutes = total % 60;
 
-      const summaryTable = document.createElement('table');
-      summaryTable.innerHTML = `
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Machine</th>
-            <th>Total Work Time (hours)</th>
-          </tr>
-        </thead>
-        <tbody>
-      `;
-
-      // Loop through all dates and machines to create the summary rows
-      Object.keys(machineDateSummary).forEach((date) => {
-        const machineData = machineDateSummary[date];
-        
-        // Create a row for the date header
-        const dateRow = document.createElement('tr');
-        dateRow.innerHTML = `
-          <td colspan="3" style="font-weight: bold; background-color: #f2f2f2;">DATE: ${date}</td>
-        `;
-        summaryTable.appendChild(dateRow);
-        
-        // Loop through all machines for each date
-        Object.keys(machineData).forEach((machine) => {
-          const totalMinutes = machineData[machine];
-          const hours = Math.floor(totalMinutes / 60);
-          const minutes = totalMinutes % 60;
-          
-          const row = document.createElement('tr');
+          const row = document.createElement("tr");
           row.innerHTML = `
-            <td></td> <!-- Empty cell for date -->
             <td>${machine}</td>
-            <td>${hours}h ${minutes}m</td>
+            <td class="${total > 0 ? '' : 'idle'}">
+              ${total > 0 ? `${hours}h ${minutes}m` : 'Idle'}
+            </td>
           `;
-          summaryTable.appendChild(row);
-        });
-      });
+          tbody.appendChild(row);
+        }
 
-      summaryTable.innerHTML += "</tbody>";
-      machineSummaryContainer.appendChild(summaryTitle);
-      machineSummaryContainer.appendChild(summaryTable);
-    });
+        table.appendChild(tbody);
+        container.appendChild(table);
+      }
+    }
+
+    renderSchedule(innerBearingJob);
   </script>
+
 </body>
 </html>

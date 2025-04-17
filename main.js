@@ -6,9 +6,6 @@ const createWindow = () => {
     height: 600,
   });
 
-  // Automatically open Developer Tools
-  win.webContents.openDevTools();
-
   win.loadFile("index.html");
 };
 

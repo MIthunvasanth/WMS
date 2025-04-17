@@ -4,22 +4,64 @@
   <meta charset="UTF-8" />
   <title>Assign Work</title>
   <style>
-    /* Styles are the same as you provided — omitted here for brevity */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    form label {
+      display: block;
+      margin: 10px 0;
+    }
+    .buttons, .listbutton {
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      text-decoration: none;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
+
   <a class="back-link" href="index.html">← Back</a>
   <h1>Assign Work</h1>
 
   <form id="assignmentForm">
     <label>
-      Inner Bearing Quantity:
-      <input type="number" name="innerBearing" min="0" placeholder="Enter quantity" />
+      Select Product:
+      <select name="product" required>
+        <option value="">-- Select Product --</option>
+        <option value="Inner Bearing">Inner Bearing</option>
+        <option value="CVT Tank">CVT Tank</option>
+      </select>
     </label>
+
     <label>
-      CVT Tank Quantity:
-      <input type="number" name="cvtTank" min="0" placeholder="Enter quantity" />
+      Quantity:
+      <input type="number" name="quantity" min="1" placeholder="Enter quantity" required />
     </label>
+
+    <label>
+      Start Date:
+      <input type="date" name="startDate" required />
+    </label>
+
+    <label>
+      End Date:
+      <input type="date" name="endDate" required />
+    </label>
+
+    <label>
+      Working Hours per Day:
+      <input type="number" name="dailyHours" min="1" max="24" required />
+    </label>
+
     <button type="submit">Schedule</button>
   </form>
 
@@ -54,20 +96,59 @@
 
     let schedule = JSON.parse(localStorage.getItem("scheduledTimeline")) || [];
 
-    function addJob(productName, quantity) {
+    function isSunday(date) {
+      return date.getDay() === 0;
+    }
+
+    function getWorkingDays(start, end) {
+      const days = [];
+      const current = new Date(start);
+      while (current <= end) {
+        if (!isSunday(current)) {
+          days.push(new Date(current));
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      return days;
+    }
+
+    function scheduleJob(productName, quantity, startDate, endDate, hoursPerDay) {
       const processList = products[productName];
-      const start = new Date();
-      start.setHours(9, 0, 0, 0); // Start at 9 AM today
-      let current = new Date(start);
+      const totalMinutesRequired = quantity * processList.reduce((sum, p) => sum + p.processTime, 0);
+
+      const workingDays = getWorkingDays(startDate, endDate);
+      const availableMinutes = workingDays.length * hoursPerDay * 60;
+
+      if (availableMinutes < totalMinutesRequired) {
+        const requiredPerDay = Math.ceil(totalMinutesRequired / workingDays.length / 60);
+        alert(`Not possible to finish. You need ~${requiredPerDay} working hours per day.`);
+        return;
+      }
+
+      let remainingMinutes = totalMinutesRequired;
+      let currentDateIndex = 0;
+      let minutesUsedToday = 0;
 
       for (let i = 1; i <= quantity; i++) {
-        processList.forEach(proc => {
-          const machine = Array.isArray(proc.machineNeeded)
+        for (const proc of processList) {
+          const procMinutes = proc.processTime;
+          let machine = Array.isArray(proc.machineNeeded)
             ? proc.machineNeeded[Math.floor(Math.random() * proc.machineNeeded.length)]
             : proc.machineNeeded;
 
-          const jobStart = new Date(current);
-          const jobEnd = new Date(current.getTime() + proc.processTime * 60000);
+          while (procMinutes > (hoursPerDay * 60 - minutesUsedToday)) {
+            // Move to next day if not enough space today
+            currentDateIndex++;
+            minutesUsedToday = 0;
+          }
+
+          const jobDate = workingDays[currentDateIndex];
+          const jobStart = new Date(jobDate);
+          jobStart.setHours(9, 0, 0, 0);
+          jobStart.setMinutes(jobStart.getMinutes() + minutesUsedToday);
+
+          const jobEnd = new Date(jobStart.getTime() + procMinutes * 60000);
+
           schedule.push({
             product: productName,
             process: proc.name,
@@ -77,13 +158,14 @@
             end: jobEnd,
             completed: false
           });
-          current = new Date(jobEnd);
-        });
-        // Add 1 hour break between units
-        current.setMinutes(current.getMinutes() + 60);
+
+          minutesUsedToday += procMinutes;
+        }
+        minutesUsedToday += 60; // 1 hour break between units
       }
 
       localStorage.setItem("scheduledTimeline", JSON.stringify(schedule));
+      alert("Schedule assigned!");
     }
 
     function resetScheduler() {
@@ -91,31 +173,33 @@
       localStorage.removeItem("scheduledTimeline");
     }
 
-    document.getElementById('assignmentForm').addEventListener('submit', function (e) {
+    document.getElementById("assignmentForm").addEventListener("submit", function (e) {
       e.preventDefault();
       const form = new FormData(e.target);
-      const innerBearingQty = parseInt(form.get('innerBearing')) || 0;
-      const cvtTankQty = parseInt(form.get('cvtTank')) || 0;
+      const product = form.get("product");
+      const quantity = parseInt(form.get("quantity")) || 0;
+      const startDate = new Date(form.get("startDate"));
+      const endDate = new Date(form.get("endDate"));
+      const dailyHours = parseInt(form.get("dailyHours")) || 8;
 
-      if (innerBearingQty > 0) addJob("Inner Bearing", innerBearingQty);
-      if (cvtTankQty > 0) addJob("CVT Tank", cvtTankQty);
-
-      if (innerBearingQty || cvtTankQty) {
-        alert("Schedule assigned!");
-        e.target.reset();
-      } else {
-        alert("Please enter at least one quantity.");
+      if (!product || quantity <= 0 || isNaN(dailyHours)) {
+        alert("Please fill in all fields correctly.");
+        return;
       }
+
+      scheduleJob(product, quantity, startDate, endDate, dailyHours);
+      e.target.reset();
     });
 
-    document.getElementById('resetBtn').addEventListener('click', function () {
-      const confirmReset = confirm('Are you sure you want to reset the entire schedule?');
+    document.getElementById("resetBtn").addEventListener("click", function () {
+      const confirmReset = confirm("Are you sure you want to reset the entire schedule?");
       if (confirmReset) {
         resetScheduler();
-        alert('Scheduler reset successfully!');
+        alert("Scheduler reset successfully!");
         window.location.reload();
       }
     });
   </script>
+
 </body>
 </html>
