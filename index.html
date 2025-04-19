@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Assign Work</title>
@@ -52,7 +53,8 @@
       font-weight: 600;
     }
 
-    form input, form select {
+    form input,
+    form select {
       width: 100%;
       padding: 10px;
       margin-bottom: 10px;
@@ -81,7 +83,8 @@
       background-color: var(--primary-dark);
     }
 
-    .listbutton, .buttons {
+    .listbutton,
+    .buttons {
       text-align: center;
       margin-top: 25px;
     }
@@ -109,7 +112,7 @@
       background: var(--white);
       padding: 20px;
       border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
     }
 
     .schedule-output h2 {
@@ -123,7 +126,8 @@
       border-collapse: collapse;
     }
 
-    .schedule-output th, .schedule-output td {
+    .schedule-output th,
+    .schedule-output td {
       border: 1px solid #ddd;
       padding: 10px;
       text-align: center;
@@ -134,7 +138,8 @@
     }
   </style>
 </head>
-<body>  
+
+<body>
   <h1>Assign Work</h1>
 
   <form id="assignmentForm">
@@ -189,27 +194,27 @@
         { name: "Marking", processTime: 2, machineNeeded: "Dot Marking" },
         { name: "Bending", processTime: 24, machineNeeded: "Press Brake" },
         { name: "Setting", processTime: 20, machineNeeded: "Welding 3" },
-        { name: "Full Weld", processTime: 40, machineNeeded: ["Welding 1", "Welding 2", "Welding 3", "Welding 4"] }
+        { name: "Full Weld", processTime: 40, machineNeeded: "Welding 1" }
       ]
     };
-    
+
     let innerBearingJob = JSON.parse(localStorage.getItem("innerBearingJob")) || {};
     let cvtJob = JSON.parse(localStorage.getItem("cvtJob")) || {};
-    
+
     document.getElementById("assignmentForm").addEventListener("submit", function (e) {
       e.preventDefault();
-    
+
       const product = document.getElementById("product").value;
       const quantity = parseInt(document.getElementById("quantity").value);
       const startDate = new Date(document.getElementById("startDate").value);
       const endDate = new Date(document.getElementById("endDate").value);
       const dailyHours = parseInt(document.getElementById("dailyHours").value);
-    
+
       if (endDate < startDate) {
         alert("End date cannot be before start date.");
         return;
       }
-    
+
       const workingDays = [];
       let currentDate = new Date(startDate);
       while (currentDate <= endDate) {
@@ -218,7 +223,7 @@
         }
         currentDate.setDate(currentDate.getDate() + 1);
       }
-    
+
       const tasks = [];
       for (const process of products[product]) {
         const time = process.processTime * quantity;
@@ -231,23 +236,23 @@
           tasks.push({ process: process.name, machine: process.machineNeeded, duration: time });
         }
       }
-    
+
       const scheduleMap = {};
       const machineDayMap = {};
       let allMachines = new Set();
-    
+
       for (const task of tasks) {
         let remaining = task.duration;
         let scheduled = false;
-    
+
         for (let i = 0; i < workingDays.length; i++) {
           const dateStr = workingDays[i].toISOString().split('T')[0];
           if (!scheduleMap[dateStr]) scheduleMap[dateStr] = {};
           if (!machineDayMap[dateStr]) machineDayMap[dateStr] = {};
           if (!machineDayMap[dateStr][task.machine]) machineDayMap[dateStr][task.machine] = 0;
-    
+
           const available = dailyHours * 60 - machineDayMap[dateStr][task.machine];
-    
+
           if (available > 0) {
             const allocated = Math.min(remaining, available);
             if (!scheduleMap[dateStr][task.machine]) scheduleMap[dateStr][task.machine] = [];
@@ -256,13 +261,13 @@
             remaining -= allocated;
             allMachines.add(task.machine);
           }
-    
+
           if (remaining <= 0) {
             scheduled = true;
             break;
           }
         }
-    
+
         if (!scheduled) {
           const totalMinutes = task.duration;
           const totalAvailableMinutes = workingDays.length * dailyHours * 60;
@@ -271,7 +276,7 @@
           return;
         }
       }
-    
+
       if (product === "Inner Bearing") {
         localStorage.setItem("innerBearingJob", JSON.stringify(scheduleMap));
         innerBearingJob = scheduleMap;
@@ -279,7 +284,7 @@
         localStorage.setItem("cvtJob", JSON.stringify(scheduleMap));
         cvtJob = scheduleMap;
       }
-    
+
       renderSchedule(scheduleMap, Array.from(allMachines));
     });
 
@@ -289,8 +294,9 @@
       alert("Schedule has been reset.");
       document.getElementById("scheduleOutput").style.display = "none";
     });
-    
 
-    </script>
+
+  </script>
 </body>
+
 </html>

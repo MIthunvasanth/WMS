@@ -80,8 +80,8 @@ class Product {
 
 // Helper function to convert minutes to time format
 function convertToTimeFormat(date) {
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
   return `${hours}:${minutes}`;
 }
 
@@ -109,76 +109,75 @@ function nextWorkingSlot(current, dailyMinutes, startTime) {
 
 // Initialize the machines
 const machines = [
-  new Machine("VTL"),
-  new Machine("VMC 1"),
-  new Machine("VMC 2"),
-  new Machine("Universal Milling"),
-  new Machine("Horizontal Milling"),
-  new Machine("Lathe"),
-  new Machine("Drilling"),
-  new Machine("CNC Tapping"),
-  new Machine("Dot Marking"),
-  new Machine("Press Brake"),
-  new Machine("Welding 1"),
-  new Machine("Welding 2"),
-  new Machine("Welding 3"),
-  new Machine("Welding 4"),
-  new Machine("Manual 1"),
-  new Machine("Manual 2"),
-  new Machine("Manual 3"),
-  new Machine("Manual 4"),
-  new Machine("Manual 5"),
-  new Machine("Manual 6"),
+  new Machine('VTL'),
+  new Machine('VMC 1'),
+  new Machine('VMC 2'),
+  new Machine('Universal Milling'),
+  new Machine('Horizontal Milling'),
+  new Machine('Lathe'),
+  new Machine('Drilling'),
+  new Machine('CNC Tapping'),
+  new Machine('Dot Marking'),
+  new Machine('Press Brake'),
+  new Machine('Welding 1'),
+  new Machine('Welding 2'),
+  new Machine('Welding 3'),
+  new Machine('Welding 4'),
+  new Machine('Manual 1'),
+  new Machine('Manual 2'),
+  new Machine('Manual 3'),
+  new Machine('Manual 4'),
+  new Machine('Manual 5'),
+  new Machine('Manual 6'),
 ];
 
 // Define products
-const innerBearing = new Product("Inner Bearing", [
-  { name: "Cutting", processTime: 30, machineNeeded: "VTL" },
-  { name: "Slot Mill", processTime: 50, machineNeeded: "VMC 1" },
-  { name: "Debour", processTime: 20, machineNeeded: "Manual 1" },
-  { name: "Tapping", processTime: 12, machineNeeded: "CNC Tapping" },
-  { name: "Marking", processTime: 3, machineNeeded: "Dot Marking" },
-  {
-    name: "Welding",
-    processTime: 40,
-    machineNeeded: ["Welding 1", "Welding 2", "Welding 3", "Welding 4"],
-  },
+const innerBearing = new Product('Inner Bearing', [
+  { name: 'Slot Mill', processTime: 50, machineNeeded: 'VMC 1' },
+  { name: 'Debour', processTime: 20, machineNeeded: 'Manual 1' },
+  { name: 'Tapping', processTime: 12, machineNeeded: 'CNC Tapping' },
+  { name: 'Marking', processTime: 3, machineNeeded: 'Dot Marking' },
+  // {
+  //   name: "Welding",
+  //   processTime: 40,
+  //   machineNeeded: ["Welding 1", "Welding 2", "Welding 3", "Welding 4"],
+  // },
 ]);
 
-const cvtTank = new Product("CVT Tank", [
-  { name: "Marking", processTime: 2, machineNeeded: "Dot Marking" },
-  { name: "Bending", processTime: 24, machineNeeded: "Press Brake" },
-  { name: "Setting", processTime: 20, machineNeeded: "Welding 3" },
+const cvtTank = new Product('CVT Tank', [
+  { name: 'Marking', processTime: 2, machineNeeded: 'Dot Marking' },
+  { name: 'Bending', processTime: 24, machineNeeded: 'Press Brake' },
+  { name: 'Setting', processTime: 20, machineNeeded: 'Welding 3' },
   {
-    name: "Full Weld",
+    name: 'Full Weld',
     processTime: 40,
-    machineNeeded: ["Welding 1", "Welding 2", "Welding 3", "Welding 4"],
+    machineNeeded: 'Welding 1',
   },
 ]);
 
 // Handle form submission
 document
-  .getElementById("schedulerForm")
-  .addEventListener("submit", function (e) {
+  .getElementById('schedulerForm')
+  .addEventListener('submit', function (e) {
     e.preventDefault();
 
-    const startDate = document.getElementById("startDate").value;
-    const endDate = document.getElementById("endDate").value;
-    const quantity = parseInt(document.getElementById("quantity").value);
-    const product = document.getElementById("product").value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const product = document.getElementById('product').value;
     const workingHours = parseInt(
-      document.getElementById("workingHours").value
+      document.getElementById('workingHours').value
     );
 
     if (!startDate || !endDate || isNaN(quantity)) {
-      alert("Please fill in all fields correctly.");
+      alert('Please fill in all fields correctly.');
       return;
     }
 
     let selectedProduct;
 
-    if (product === "Inner Bearing") selectedProduct = innerBearing;
-    else if (product === "CVT Tank") selectedProduct = cvtTank;
+    if (product === 'Inner Bearing') selectedProduct = innerBearing;
+    else if (product === 'CVT Tank') selectedProduct = cvtTank;
 
     const schedule = selectedProduct.schedule(
       machines,
@@ -193,11 +192,11 @@ document
 
 // Display the schedule in the table
 function displaySchedule(schedule) {
-  const scheduleTableBody = document.querySelector("#scheduleTable tbody");
-  scheduleTableBody.innerHTML = "";
+  const scheduleTableBody = document.querySelector('#scheduleTable tbody');
+  scheduleTableBody.innerHTML = '';
 
   schedule.forEach((task) => {
-    const row = document.createElement("tr");
+    const row = document.createElement('tr');
     row.innerHTML = ` 
       <td>${task.partNo}</td>
       <td>${task.process}</td>
@@ -208,10 +207,10 @@ function displaySchedule(schedule) {
     scheduleTableBody.appendChild(row);
   });
 
-  document.getElementById("scheduleTable").style.display = "table";
+  document.getElementById('scheduleTable').style.display = 'table';
 }
 
 // Save the schedule to localStorage
 function saveToLocalStorage(schedule) {
-  localStorage.setItem("schedule", JSON.stringify(schedule));
+  localStorage.setItem('schedule', JSON.stringify(schedule));
 }
